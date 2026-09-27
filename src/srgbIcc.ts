@@ -128,8 +128,8 @@ export function generateSrgbIccProfile(): Uint8Array {
   const bXYZ = xyzTag(0.1430804, 0.0606169, 0.7141733)
   const wtpt = xyzTag(0.9642, 1.0, 0.8249)
   const trc = curveGammaTag(2.2)
-  const desc = descTag('sRGB (genere par Vellum)')
-  const cprt = textTag('Profil colorimetrique genere par Vellum, sans revendication de droits')
+  const desc = descTag('sRGB (genere par VellumPDF)')
+  const cprt = textTag('Profil colorimetrique genere par VellumPDF, sans revendication de droits')
 
   const tags: Tag[] = [
     { sig: 'desc', data: desc },

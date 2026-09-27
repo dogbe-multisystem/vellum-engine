@@ -128,7 +128,86 @@ export async function repairPdf(bytes: Uint8Array): Promise<QpdfResult> {
 }
 
 /**
- * Chiffre avec mot de passe utilisateur (ouverture) en AES-256.
+ * Droits accordés lors du chiffrement, au-delà du simple mot de passe
+ * d'ouverture — ce qu'iLovePDF et PDF24 proposent sous « permissions ».
+ * Correspondance exacte avec les options qpdf pour l'AES-256 (confirmée
+ * dans le texte d'aide embarqué du binaire wasm : `strings qpdf.wasm`) :
+ *  - impression   → --print=full|low|none
+ *  - copie        → --extract=y|n (texte et images)
+ *  - modification → --modify-other=y|n (contenu, hors les trois ci-dessous)
+ *  - commentaires → --annotate=y|n
+ *  - formulaires  → --form=y|n
+ *  - assemblage   → --assemble=y|n (insérer, supprimer, tourner des pages)
+ * L'accessibilité (--accessibility) n'est pas exposée ici : elle est
+ * toujours mise à « y », voir construireArgsChiffrement.
+ */
+export interface DroitsPdf {
+  impression: 'full' | 'low' | 'none'
+  copie: boolean
+  modification: boolean
+  commentaires: boolean
+  formulaires: boolean
+  assemblage: boolean
+}
+
+/** Longueur en octets du mot de passe propriétaire généré quand le champ est vide. */
+const LONGUEUR_MDP_GENERE = 24
+
+/**
+ * Mot de passe propriétaire aléatoire, en hexadécimal — jamais de « - » en
+ * tête, donc jamais pris pour une option par la syntaxe positionnelle de
+ * qpdf 11.0.0 (voir encryptPdf). Il n'est ni affiché ni conservé : son seul
+ * rôle est d'empêcher que la simple connaissance du mot de passe d'ouverture
+ * (ou l'absence de mot de passe) permette aussi de retirer les droits.
+ */
+function genererMotDePasseProprietaire(): string {
+  const octets = new Uint8Array(LONGUEUR_MDP_GENERE)
+  crypto.getRandomValues(octets)
+  return Array.from(octets, (o) => o.toString(16).padStart(2, '0')).join('')
+}
+
+/**
+ * Construit les arguments positionnels de `--encrypt … --`. Fonction pure,
+ * exportée pour être vérifiée sans le runtime wasm (voir le script de test
+ * du lot « permissions » dans le brouillon de l'agent) : c'est la partie de
+ * cet outil qui se teste sans navigateur ni Node compatible Emscripten.
+ */
+export function construireArgsChiffrement(
+  userPassword: string,
+  proprietaire: string,
+  droits?: DroitsPdf,
+): string[] {
+  const args = ['--encrypt', userPassword, proprietaire, '256']
+  if (droits) {
+    args.push(
+      `--print=${droits.impression}`,
+      `--extract=${droits.copie ? 'y' : 'n'}`,
+      `--modify-other=${droits.modification ? 'y' : 'n'}`,
+      `--annotate=${droits.commentaires ? 'y' : 'n'}`,
+      `--form=${droits.formulaires ? 'y' : 'n'}`,
+      `--assemble=${droits.assemblage ? 'y' : 'n'}`,
+      // Toujours autorisée : ce n'est pas un réglage qu'on retire aux
+      // lecteurs d'écran.
+      '--accessibility=y',
+    )
+  }
+  args.push('--')
+  return args
+}
+
+/**
+ * Chiffre avec mot de passe utilisateur (ouverture) en AES-256, et
+ * facultativement des droits restreints (mot de passe propriétaire distinct,
+ * permissions). Sans `droits`, le comportement est inchangé : mot de passe
+ * unique, ouverture = propriétaire, aucune restriction — c'est le chemin que
+ * suivent encore l'outil Protéger sans la section « Restreindre les droits »
+ * et l'outil « lot » (batch.ts).
+ *
+ * Avec `droits`, un mot de passe propriétaire est nécessaire pour que qpdf
+ * applique les restrictions ; s'il n'est pas fourni (`ownerPassword` vide),
+ * un mot de passe aléatoire est généré (voir genererMotDePasseProprietaire)
+ * et renvoyé dans `ownerPasswordGenere` — uniquement pour information
+ * interne, jamais affiché à l'utilisateur.
  *
  * Le qpdf embarqué (11.0.0) n'accepte que la forme positionnelle
  * « --encrypt utilisateur propriétaire bits -- » : un mot de passe
@@ -142,8 +221,20 @@ export async function encryptPdf(
   bytes: Uint8Array,
   userPassword: string,
   ownerPassword?: string,
-): Promise<QpdfResult> {
-  const proprietaire = ownerPassword || userPassword
+  droits?: DroitsPdf,
+): Promise<QpdfResult & { ownerPasswordGenere?: string }> {
+  let proprietaire = ownerPassword || ''
+  let ownerPasswordGenere: string | undefined
+  if (droits) {
+    if (!proprietaire) {
+      proprietaire = genererMotDePasseProprietaire()
+      ownerPasswordGenere = proprietaire
+    }
+  } else {
+    // Chemin inchangé : sans droits à restreindre, le propriétaire retombe
+    // sur le mot de passe d'ouverture comme avant cette fonctionnalité.
+    proprietaire = ownerPassword || userPassword
+  }
   if (userPassword.startsWith('-') || proprietaire.startsWith('-')) {
     return {
       ok: false,
@@ -152,7 +243,8 @@ export async function encryptPdf(
         'mot de passe commençant par « - » refusé : la forme positionnelle de qpdf 11.0.0 le prendrait pour une option',
     }
   }
-  return runQpdf(['--encrypt', userPassword, proprietaire, '256', '--'], bytes)
+  const res = await runQpdf(construireArgsChiffrement(userPassword, proprietaire, droits), bytes)
+  return { ...res, ownerPasswordGenere }
 }
 
 /**
@@ -171,4 +263,23 @@ export function looksEncrypted(bytes: Uint8Array): boolean {
     return true
   }
   return false
+}
+
+/**
+ * Linéarise (« Fast Web View ») : le document est réordonné pour que la
+ * première page s'affiche avant la fin du téléchargement, quand le PDF est
+ * ouvert depuis un site. `--object-streams=generate` compacte au passage,
+ * sans perte. Contenu, texte et signets restent identiques.
+ */
+export async function linearizePdf(bytes: Uint8Array): Promise<QpdfResult> {
+  return runQpdf(['--linearize', '--object-streams=generate'], bytes)
+}
+
+/**
+ * Vrai si le fichier se déclare linéarisé : le dictionnaire /Linearized
+ * doit être le premier objet, donc dans les premiers octets.
+ */
+export function estLinearise(bytes: Uint8Array): boolean {
+  const debut = new TextDecoder('latin1').decode(bytes.subarray(0, 1024))
+  return /\/Linearized\s/.test(debut)
 }

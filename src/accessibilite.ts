@@ -68,7 +68,7 @@ export type PointId =
 interface Base<I extends PointId, D> {
   id: I
   etat: EtatPoint
-  /** Slug de l'outil Vellum qui corrige ce point, quand il en existe un. */
+  /** Slug de l'outil VellumPDF qui corrige ce point, quand il en existe un. */
   outil?: string
   donnees: D
 }
@@ -546,10 +546,13 @@ export async function controlerAccessibilite(
       const afficherLeTitre = ddt?.asBoolean() ?? false
       const titreInfo = (doc.getTitle() ?? '').trim()
       const xmpTitre = titreXmp(xmp)
+      const titreConforme = Boolean(titreInfo || xmpTitre) && afficherLeTitre
       points.push({
         id: 'titre',
-        etat: etatDepuis(Boolean(titreInfo || xmpTitre) && afficherLeTitre),
-        outil: titreInfo || xmpTitre ? undefined : 'metadonnees',
+        etat: etatDepuis(titreConforme),
+        // L'outil Métadonnées écrit le titre /Info et /DisplayDocTitle :
+        // il corrige les deux moitiés de ce point.
+        outil: titreConforme ? undefined : 'metadonnees',
         donnees: { titreInfo, titreXmp: xmpTitre, afficherLeTitre },
       })
     } else {
@@ -563,10 +566,12 @@ export async function controlerAccessibilite(
     /* 2. Langue déclarée --------------------------------------------- */
     if (lib && doc) {
       const code = texteDe(lib, doc.catalog.lookup(lib.PDFName.of('Lang'))).trim()
+      const langueConforme = Boolean(code) && langueValide(code)
       points.push({
         id: 'langue',
-        etat: etatDepuis(Boolean(code) && langueValide(code)),
-        outil: undefined,
+        etat: etatDepuis(langueConforme),
+        // Depuis le 18.09.2026, l'outil Métadonnées écrit /Lang.
+        outil: langueConforme ? undefined : 'metadonnees',
         donnees: { code, valide: langueValide(code) },
       })
     } else {

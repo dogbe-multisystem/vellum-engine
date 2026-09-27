@@ -20,7 +20,7 @@
  * Les types restent importés statiquement (`import type { PDFDocument } from
  * 'pdf-lib'`) : ils ne pèsent rien à l'exécution.
  *
- * ToolShell lance `prechargerTraitement()` une fois la page inactive : la
+ * ToolShell lance `prechargerTraitement()` au premier geste ou après 3,5 s : la
  * bibliothèque est en général déjà là quand le premier fichier arrive, sans
  * avoir gêné le premier affichage.
  */

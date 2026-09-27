@@ -51,6 +51,8 @@ const UNITES_TAILLE: Record<Lang, [string, string, string]> = {
   de: ['B', 'KB', 'MB'],
   it: ['B', 'KB', 'MB'],
   en: ['B', 'KB', 'MB'],
+  es: ['B', 'KB', 'MB'],
+  pt: ['B', 'KB', 'MB'],
 }
 
 /**

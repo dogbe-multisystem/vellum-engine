@@ -252,7 +252,7 @@ function addXmpMetadata(
 // Mode « fidèle » (au mieux, sans garantie).
 // ---------------------------------------------------------------------------
 
-const PRODUCER_FIDELE = 'Vellum — conversion PDF/A-2B au mieux (pdf-lib, sans Ghostscript)'
+const PRODUCER_FIDELE = 'VellumPDF — conversion PDF/A-2B au mieux (pdf-lib, sans Ghostscript)'
 
 /** Convertit un PDF en PDF/A-2B « au mieux ». Rejette les documents chiffrés. */
 export async function convertToPdfA(bytes: Uint8Array): Promise<{
@@ -361,7 +361,7 @@ export interface ConformePdfaReport {
   pageCount: number
 }
 
-const PRODUCER_CONFORME = 'Vellum — conversion PDF/A-2B conforme (pages rastérisées, validé veraPDF)'
+const PRODUCER_CONFORME = 'VellumPDF — conversion PDF/A-2B conforme (pages rastérisées, validé veraPDF)'
 
 /**
  * Reconstruit un PDF/A-2B conforme à partir de pages déjà rastérisées.

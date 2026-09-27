@@ -157,10 +157,12 @@ export async function applyBatchOp(
     case 'filigrane': {
       const { StandardFonts, degrees, rgb } = await chargerPdfLib()
       const doc = await loadPdf(bytes)
-      const font = await doc.embedFont(StandardFonts.Helvetica)
       const texte = opts.texte?.trim() || 'CONFIDENTIEL'
       const opacity = opts.opacite ?? 0.18
       const niveauGris = rgb(0.45, 0.43, 0.4)
+      // Moteur public : Helvetica seule (texte WinAnsi), voir sync-engine.mjs.
+      const font = await doc.embedFont(StandardFonts.Helvetica)
+
       doc.getPages().forEach((page) => {
         const { largeurVue, hauteurVue, rotation, versDessin } = reperePage(page)
         const size = Math.min(56, (largeurVue * 0.9) / (texte.length * 0.5))

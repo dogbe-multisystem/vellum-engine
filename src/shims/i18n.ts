@@ -4,4 +4,4 @@
  * reste du module (traduction d'URL, slugs par langue) qui n'a pas de sens
  * hors du site vellumpdf.ch.
  */
-export type Lang = 'fr' | 'de' | 'it' | 'en'
+export type Lang = 'fr' | 'de' | 'it' | 'en' | 'es' | 'pt'
