@@ -28,7 +28,7 @@ le paquet, si bien que rien n'est téléchargé à l'exécution.
 Pour travailler depuis les sources :
 
 ```bash
-git clone https://github.com/mabebakatala-cmyk/vellum-engine.git
+git clone https://github.com/dogbe-multisystem/vellum-engine.git
 cd vellum-engine
 npm install
 npm run build

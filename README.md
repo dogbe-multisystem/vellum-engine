@@ -27,7 +27,7 @@ downloaded at run time.
 To work from the source instead:
 
 ```bash
-git clone https://github.com/mabebakatala-cmyk/vellum-engine.git
+git clone https://github.com/dogbe-multisystem/vellum-engine.git
 cd vellum-engine
 npm install
 npm run build
