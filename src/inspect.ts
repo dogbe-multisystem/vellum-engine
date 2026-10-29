@@ -21,7 +21,6 @@ import type { PDFDict, PDFDocument, PDFField, PDFPage, PDFRef } from 'pdf-lib'
 // paramètre plutôt que de le recharger chacune, `inspecterPdf` le chargeant
 // une seule fois pour toute l'analyse.
 import { chargerPdfLib } from './bibliotheques.ts'
-import { loadPdf } from './pdf.ts'
 import { looksEncrypted } from './qpdf.ts'
 import { listAttachments } from './attachments.ts'
 import type { AttachmentInfo } from './attachments.ts'
@@ -572,7 +571,11 @@ export async function inspecterPdf(bytes: Uint8Array): Promise<InspectionReport>
   }
 
   const lib = await chargerPdfLib()
-  const doc = await loadPdf(bytes)
+  // `updateMetadata: false` : par défaut, pdf-lib inscrit à l'ouverture son
+  // propre nom comme producteur et l'heure courante comme date de
+  // modification — le rapport aurait affiché « pdf-lib » au lieu du vrai
+  // logiciel, et l'heure du contrôle au lieu de celle du document.
+  const doc = await lib.PDFDocument.load(bytes, { updateMetadata: false })
   const attachments = await listAttachments(bytes).catch(() => [])
   const hiddenText = analyserTexteCache(lib, doc)
   const { javascriptBlocks, autoActions } = compterAutomatisations(lib, doc)

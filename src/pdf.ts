@@ -53,6 +53,19 @@ const UNITES_TAILLE: Record<Lang, [string, string, string]> = {
   en: ['B', 'KB', 'MB'],
   es: ['B', 'KB', 'MB'],
   pt: ['B', 'KB', 'MB'],
+  hi: ['B', 'KB', 'MB'],
+  ar: ['بايت', 'ك.ب', 'م.ب'],
+  th: ['B', 'KB', 'MB'],
+  ja: ['B', 'KB', 'MB'],
+  uk: ['Б', 'КБ', 'МБ'],
+  ko: ['B', 'KB', 'MB'],
+  ru: ['Б', 'КБ', 'МБ'],
+  zh: ['B', 'KB', 'MB'],
+  pl: ['B', 'KB', 'MB'],
+  tr: ['B', 'KB', 'MB'],
+  id: ['B', 'KB', 'MB'],
+  nl: ['B', 'kB', 'MB'],
+  vi: ['B', 'KB', 'MB'],
 }
 
 /**
