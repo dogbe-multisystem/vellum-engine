@@ -1,6 +1,6 @@
 {
   "name": "vellum-pdf-engine",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Local PDF processing engine and CLI (merge, split, watermark, PDF/A, accessibility, signatures...) — no network calls, ever. Same code as vellumpdf.ch.",
   "type": "module",
   "license": "MIT",
